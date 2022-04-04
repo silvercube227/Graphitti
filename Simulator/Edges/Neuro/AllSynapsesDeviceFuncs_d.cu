@@ -126,7 +126,9 @@ __device__ bool isSpikingSynapsesSpikeQueueDevice(AllSpikingSynapsesDeviceProper
 ///  @param  delta                Pre/post synaptic spike interval.
 ///  @param  epost                Params for the rule given in Froemke and Dan (2002).
 ///  @param  epre                 Params for the rule given in Froemke and Dan (2002).
-__device__ void stdpLearningDevice(AllSTDPSynapsesDeviceProperties* allEdgesDevice, const BGSIZE iEdg, double delta, double epost, double epre)
+
+/*
+__device__ void early_version_stdpLearningDevice(AllSTDPSynapsesDeviceProperties* allEdgesDevice, const BGSIZE iEdg, double delta, double epost, double epre)
 {
     BGFLOAT STDPgap = allEdgesDevice->STDPgap_[iEdg];
     BGFLOAT muneg = allEdgesDevice->muneg_[iEdg];
@@ -176,6 +178,58 @@ __device__ void stdpLearningDevice(AllSTDPSynapsesDeviceProperties* allEdgesDevi
     //     printf("          W: %f\n\n", W);
     // );
 }
+*/
+
+
+__device__ void stdpLearningDevice(AllSTDPSynapsesDeviceProperties* allEdgesDevice, const BGSIZE iEdg, double delta, double epost, double epre)
+{
+    BGFLOAT STDPgap = allEdgesDevice->STDPgap_[iEdg];
+    BGFLOAT muneg = allEdgesDevice->muneg_[iEdg];
+    BGFLOAT mupos = allEdgesDevice->mupos_[iEdg];
+    BGFLOAT tauneg = allEdgesDevice->tauneg_[iEdg];
+    BGFLOAT taupos = allEdgesDevice->taupos_[iEdg];
+    BGFLOAT Aneg = allEdgesDevice->Aneg_[iEdg];
+    BGFLOAT Apos = allEdgesDevice->Apos_[iEdg];
+    BGFLOAT Wex = allEdgesDevice->Wex_[iEdg];
+    BGFLOAT& W = allEdgesDevice->W_[iEdg];
+    edgeType type = allEdgesDevice->type_[iEdg];
+    BGFLOAT oldW = W;
+    BGFLOAT dw = 0;
+
+    if (delta <= fabs(STDPgap)) {
+      return;
+    }
+
+    if (delta < -STDPgap) {
+        // Depression
+        dw = pow(fabs(W) / Wex,  muneg) * Aneg * exp(delta / tauneg);  // normalize
+    } else if (delta > STDPgap) {
+        // Potentiation
+        dw = pow(fabs(Wex - fabs(W)) / Wex,  mupos) * Apos * exp(-delta / taupos); // normalize
+    } else {
+        return;
+    }
+
+    // dw is the percentage change in synaptic strength; add 1.0 to become the scaling ratio
+    dw = 1.0 + dw;
+
+    // if scaling ratio is less than zero, set it to zero so this synapse, its strength is always zero
+    if (dw != 0.0) {
+        W *= dw;
+    }
+
+    
+
+    // if new weight is bigger than Wex_ (maximum allowed weight), then set it to Wex_
+    if (fabs(W) > Wex) {
+        W = edgSign(type) * Wex;
+    }
+
+}
+
+
+
+
 
 ///  Checks if there is an input spike in the queue.
 ///
@@ -272,8 +326,11 @@ __global__ void advanceSpikingSynapsesDevice ( int totalSynapseCount, EdgeIndexM
 ///  @param[in] allEdgesDevice        GPU address of AllSTDPSynapsesDeviceProperties structures 
 ///                                      on device memory.
 ///  @param[in] allVerticesDevice         GPU address of AllVertices structures on device memory.
-///  @param[in] maxSpikes                Maximum number of spikes per neuron per epoch.               
-__global__ void advanceSTDPSynapsesDevice ( int totalSynapseCount, EdgeIndexMap* edgeIndexMapDevice, uint64_t simulationStep, const BGFLOAT deltaT, AllSTDPSynapsesDeviceProperties* allEdgesDevice, AllSpikingNeuronsDeviceProperties* allVerticesDevice, int maxSpikes ) {
+///  @param[in] maxSpikes                Maximum number of spikes per neuron per epoch.
+
+/* 
+
+__global__ void early_version_advanceSTDPSynapsesDevice ( int totalSynapseCount, EdgeIndexMap* edgeIndexMapDevice, uint64_t simulationStep, const BGFLOAT deltaT, AllSTDPSynapsesDeviceProperties* allEdgesDevice, AllSpikingNeuronsDeviceProperties* allVerticesDevice, int maxSpikes ) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if ( idx >= totalSynapseCount )
             return;
@@ -431,6 +488,9 @@ __global__ void advanceSTDPSynapsesDevice ( int totalSynapseCount, EdgeIndexMap*
     // decay the post spike response
     psr *= decay;
 }
+
+*/
+
 ///@}
 
 /******************************************
@@ -953,4 +1013,93 @@ __global__ void initSynapsesDevice( int n, AllDSSynapsesDeviceProperties* allEdg
     allEdgesDevice->W_[neuronIndex] = weight * AllNeuroEdges::SYNAPSE_STRENGTH_ADJUSTMENT;
 }
 ///@}
+
+
+
+
+
+
+
+
+
+__global__ void advanceSTDPSynapsesDevice ( int totalSynapseCount, EdgeIndexMap* edgeIndexMapDevice, uint64_t simulationStep, const BGFLOAT deltaT, AllSTDPSynapsesDeviceProperties* allEdgesDevice, AllSpikingNeuronsDeviceProperties* allVerticesDevice, int maxSpikes ) {
+        int idx = blockIdx.x * blockDim.x + threadIdx.x;
+        if ( idx >= totalSynapseCount )
+                return;
+        BGSIZE iEdg = edgeIndexMapDevice->incomingEdgeIndexMap_[idx];
+        BGFLOAT& W = allEdgesDevice->W_[iEdg];
+        BGFLOAT& decay = allEdgesDevice->decay_[iEdg];
+        BGFLOAT& psr = allEdgesDevice->psr_[iEdg];
+
+        // is an input in the queue?
+        bool fPre = isSpikingSynapsesSpikeQueueDevice(allEdgesDevice, iEdg);
+        bool fPost = isSpikingSynapsesSpikeQueueDevice(allEdgesDevice, iEdg); 
+        if (fPre || fPost) {
+            BGFLOAT taupos = allEdgesDevice->taupos_[iEdg];
+            BGFLOAT tauneg = allEdgesDevice->tauneg_[iEdg];
+            int total_delay = allEdgesDevice->totalDelay_[iEdg];
+
+            //const BGFLOAT deltaT
+            //AllSpikingNeuronsDeviceProperties* allVerticesDevice 
+            // parameters in the function declaration 
+
+            // pre and post neurons index
+            int idxPre = allEdgesDevice->sourceVertexIndex_[iEdg];
+            int idxPost = allEdgesDevice->destVertexIndex_[iEdg];
+            uint64_t spikeHistory, spikeHistory2; 
+            BGFLOAT delta;
+            BGFLOAT epre, epost;
+                if (fPre) {   // preSpikeHit
+
+                spikeHistory = getSTDPSynapseSpikeHistoryDevice(allVerticesDevice, idxPre, -2, maxSpikes);
+                epre = 1.0;
+                epost = 1.0;
+                int offIndex = -1;
+                while (true) {
+                    spikeHistory = getSTDPSynapseSpikeHistoryDevice(allVerticesDevice, idxPost, offIndex, maxSpikes);
+                    if (spikeHistory == ULONG_MAX)
+                        break;
+                    delta = -static_cast<BGFLOAT>(simulationStep - spikeHistory) * deltaT;
+                    if (delta <= -3.0 * tauneg)
+                        break;
+                    
+                    stdpLearningDevice(allEdgesDevice, iEdg, delta, epost, epre);
+                    --offIndex;
+                }
+
+                changeSpikingSynapsesPSRDevice(allEdgesDevice, iEdg, simulationStep, deltaT);
+
+                }
+            if (fPost) {
+                spikeHistory = getSTDPSynapseSpikeHistoryDevice(allVerticesDevice, idxPre, -2, maxSpikes);
+                epre = 1.0;
+                epost = 1.0;
+                int offIndex = -1;
+
+                while (true) {
+                    spikeHistory = getSTDPSynapseSpikeHistoryDevice(allVerticesDevice, idxPre, offIndex, maxSpikes);
+                    if (spikeHistory == ULONG_MAX)
+                        break;
+
+                    if (spikeHistory + total_delay > simulationStep) {
+                        --offIndex;
+                        continue;
+                    }
+                    delta = -static_cast<BGFLOAT>(simulationStep - spikeHistory - total_delay) * deltaT;
+                    if (delta >= -3.0 * taupos)
+                        break;
+                    
+                    stdpLearningDevice(allEdgesDevice, iEdg, delta, epost, epre);
+                    --offIndex;
+                }
+            }
+        }
+        // decay the post spike response
+        psr *= decay;
+
+}
+
+
+
+
 
