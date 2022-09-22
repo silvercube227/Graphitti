@@ -58,7 +58,7 @@ public:
    /// @param    srcVertex  integer that points to a Neuron in the type map as a source.
    /// @param    destVertex integer that points to a Neuron in the type map as a destination.
    /// @return type of the synapse.
-   virtual edgeType edgType(const int srcVertex, const int destVertex) = 0;
+   virtual edgeType edgType(const int srcVertex, const int destVertex) const = 0;
 
    VectorMatrix *xloc_;   ///< Store neuron i's x location.
 
@@ -71,9 +71,9 @@ public:
    vector<int>
       probedNeuronList_;   ///< Probed neurons list. // ToDo: Move this to Hdf5 recorder once its implemented in project -chris
 
-   vertexType *vertexTypeMap_;   ///< The vertex type map (INH, EXC).
+   vector<vertexType> vertexTypeMap_;   ///< The vertex type map (INH, EXC).
 
-   bool *starterMap_;   ///< The starter existence map (T/F).
+   vector<bool> starterMap_;   ///< The starter existence map (T/F).
 
    BGSIZE numEndogenouslyActiveNeurons_;   ///< Number of endogenously active neurons.
 

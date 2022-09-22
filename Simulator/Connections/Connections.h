@@ -55,9 +55,7 @@ public:
    ///  Setup the internal structure of the class (allocate memories and initialize them).
    ///
    ///  @param  layout    Layout information of the neural network.
-   ///  @param  neurons   The Neuron list to search from.
-   ///  @param  synapses  The Synapse list to search from.
-   virtual void setupConnections(Layout *layout, AllVertices *vertices, AllEdges *synapses) = 0;
+   virtual void setupConnections(const Layout &layout) = 0;
 
    /// Load member variables from configuration file.
    /// Registered to OperationManager as Operations::op::loadParameters
@@ -69,19 +67,15 @@ public:
 
    ///  Update the connections status in every epoch.
    ///
-   ///  @param  neurons  The Neuron list to search from.
    ///  @param  layout   Layout information of the neural network.
    ///  @return true if successful, false otherwise.
-   virtual bool updateConnections(AllVertices &vertices, Layout *layout);
+   virtual bool updateConnections(Layout &layout);
 
    ///  Creates synapses from synapse weights saved in the serialization file.
    ///
    ///  @param  numVertices Number of vertices to update.
    ///  @param  layout      Layout information of the neural network.
-   ///  @param  ineurons    The Neuron list to search from.
-   ///  @param  isynapses   The Synapse list to search from.
-   void createSynapsesFromWeights(const int numVertices, Layout *layout, AllVertices &vertices,
-                                  AllEdges &synapses);
+   void createSynapsesFromWeights(const Layout &layout);
 
 #if defined(USE_GPU)
 public:
@@ -107,8 +101,7 @@ public:
    ///  @param  numVertices Number of vertices to update.
    ///  @param  ineurons    The Neuron list to search from.
    ///  @param  isynapses   The Synapse list to search from.
-   virtual void updateSynapsesWeights(const int numVertices, AllVertices &vertices,
-                                      AllEdges &synapses, Layout *layout);
+   virtual void updateSynapsesWeights(const Layout &layout);
 
 #endif   // USE_GPU
 

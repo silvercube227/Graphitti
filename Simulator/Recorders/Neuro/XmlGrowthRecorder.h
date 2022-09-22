@@ -58,7 +58,7 @@ public:
 
 private:
    // TODO: There seems to be multiple copies of this in different classes...
-   void getStarterNeuronMatrix(VectorMatrix &matrix, const bool *starterMap);
+   void getStarterNeuronMatrix(VectorMatrix &matrix, const vector<bool> starterMap);
 
    // track firing rate
    CompleteMatrix ratesHistory_;

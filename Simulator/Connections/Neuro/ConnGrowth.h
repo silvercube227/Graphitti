@@ -91,9 +91,7 @@ public:
    ///  Setup the internal structure of the class (allocate memories and initialize them).
    ///
    ///  @param  layout    Layout information of the neural network.
-   ///  @param  neurons   The Neuron list to search from.
-   ///  @param  synapses  The Synapse list to search from.
-   virtual void setupConnections(Layout *layout, AllVertices *neurons, AllEdges *synapses) override;
+   virtual void setupConnections(const Layout &layout) override;
 
    /// Load member variables from configuration file.
    /// Registered to OperationManager as Operations::op::loadParameters
@@ -105,10 +103,9 @@ public:
 
    ///  Update the connections status in every epoch.
    ///
-   ///  @param  neurons  The Neuron list to search from.
    ///  @param  layout   Layout information of the neural network.
    ///  @return true if successful, false otherwise.
-   virtual bool updateConnections(AllVertices &neurons, Layout *layout) override;
+   virtual bool updateConnections(Layout &layout) override;
 
    ///  Cereal serialization method
    ///  (Serializes radii)
@@ -148,27 +145,26 @@ public:
    ///  @param  ineurons    The AllVertices object.
    ///  @param  isynapses   The AllEdges object.
    ///  @param  layout      The Layout object.
-   virtual void updateSynapsesWeights(const int numVertices, AllVertices &vertices,
-                                      AllEdges &synapses, Layout *layout) override;
+   virtual void updateSynapsesWeights(const Layout &layout) override;
 
 #endif
 private:
    ///  Calculates firing rates, neuron radii change and assign new values.
    ///
    ///  @param  neurons  The Neuron list to search from.
-   void updateConns(AllVertices &neurons);
+   void updateConns(const AllVertices &neurons);
 
    ///  Update the distance between frontiers of Neurons.
    ///
    ///  @param  numVertices  Number of vertices to update.
    ///  @param  layout      Layout information of the neural network.
-   void updateFrontiers(const int numVertices, Layout *layout);
+   void updateFrontiers(const int numVertices, const Layout &layout);
 
    ///  Update the areas of overlap in between Neurons.
    ///
    ///  @param  numVertices  Number of vertices to update.
    ///  @param  layout      Layout information of the neural network.
-   void updateOverlap(BGFLOAT numVertices, Layout *layout);
+   void updateOverlap(BGFLOAT numVertices, const Layout &layout);
 
 public:
    struct GrowthParams {

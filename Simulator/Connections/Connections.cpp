@@ -79,10 +79,9 @@ void Connections::createEdgeIndexMap()
 
 ///  Update the connections status in every epoch.
 ///
-///  @param  vertices  The vertex list to search from.
 ///  @param  layout   Layout information of the neural network.
 ///  @return true if successful, false otherwise.
-bool Connections::updateConnections(AllVertices &vertices, Layout *layout)
+bool Connections::updateConnections(Layout &layout)
 {
    return false;
 }
@@ -103,8 +102,7 @@ void Connections::updateSynapsesWeights(const int numVertices, AllVertices &vert
 ///  @param  numVertices  Number of vertices to update.
 ///  @param  vertices     The vertex list to search from.
 ///  @param  synapses    The Synapse list to search from.
-void Connections::updateSynapsesWeights(const int numVertices, AllVertices &vertices,
-                                        AllEdges &synapses, Layout *layout)
+void Connections::updateSynapsesWeights(const Layout &layout)
 {
 }
 
@@ -116,9 +114,10 @@ void Connections::updateSynapsesWeights(const int numVertices, AllVertices &vert
 ///  @param  layout      Layout information of the neural network.
 ///  @param  ivertices    The vertex list to search from.
 ///  @param  isynapses   The Synapse list to search from.
-void Connections::createSynapsesFromWeights(const int numVertices, Layout *layout,
-                                            AllVertices &vertices, AllEdges &synapses)
+void Connections::createSynapsesFromWeights(const Layout &layout)
 {
+   int numVertices = Simulator::getInstance().getTotalVertices();
+
    // for each neuron
    for (int i = 0; i < numVertices; i++) {
       // for each synapse in the vertex
@@ -126,16 +125,16 @@ void Connections::createSynapsesFromWeights(const int numVertices, Layout *layou
            synapseIndex++) {
          BGSIZE iEdg = Simulator::getInstance().getMaxEdgesPerVertex() * i + synapseIndex;
          // if the synapse weight is not zero (which means there is a connection), create the synapse
-         if (synapses.W_[iEdg] != 0.0) {
-            BGFLOAT theW = synapses.W_[iEdg];
-            BGFLOAT *sumPoint = &(vertices.summationMap_[i]);
-            int srcVertex = synapses.sourceVertexIndex_[iEdg];
-            int destVertex = synapses.destVertexIndex_[iEdg];
-            edgeType type = layout->edgType(srcVertex, destVertex);
-            synapses.edgeCounts_[i]++;
-            synapses.createEdge(iEdg, srcVertex, destVertex, sumPoint,
+         if (edges_->W_[iEdg] != 0.0) {
+            BGFLOAT theW = edges_->W_[iEdg];
+            BGFLOAT *sumPoint = &(layout.getVertices()->summationMap_[i]);
+            int srcVertex = edges_->sourceVertexIndex_[iEdg];
+            int destVertex = edges_->destVertexIndex_[iEdg];
+            edgeType type = layout.edgType(srcVertex, destVertex);
+            edges_->edgeCounts_[i]++;
+            edges_->createEdge(iEdg, srcVertex, destVertex, sumPoint,
                                 Simulator::getInstance().getDeltaT(), type);
-            synapses.W_[iEdg] = theW;
+            edges_->W_[iEdg] = theW;
          }
       }
    }

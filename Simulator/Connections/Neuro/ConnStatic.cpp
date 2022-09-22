@@ -52,9 +52,7 @@ ConnStatic::~ConnStatic()
 ///  small-world rewiring probability.
 ///
 ///  @param  layout    Layout information of the neural network.
-///  @param  vertices   The Vertex list to search from.
-///  @param  edges  The Synapse list to search from.
-void ConnStatic::setupConnections(Layout *layout, AllVertices *vertices, AllEdges *edges)
+void ConnStatic::setupConnections(const Layout &layout)
 {
    Simulator &simulator = Simulator::getInstance();
    int numVertices = simulator.getTotalVertices();
@@ -63,7 +61,7 @@ void ConnStatic::setupConnections(Layout *layout, AllVertices *vertices, AllEdge
    WCurrentEpoch_ = new BGFLOAT[maxTotalEdges];
    sourceVertexIndexCurrentEpoch_ = new int[maxTotalEdges];
    destVertexIndexCurrentEpoch_ = new int[maxTotalEdges];
-   AllNeuroEdges *neuroEdges = dynamic_cast<AllNeuroEdges *>(edges);
+   AllNeuroEdges *neuroEdges = dynamic_cast<AllNeuroEdges *>(edges_.get());
 
    radiiSize_ = numVertices;
    int added = 0;
@@ -76,7 +74,7 @@ void ConnStatic::setupConnections(Layout *layout, AllVertices *vertices, AllEdge
       // pick the connections shorter than threshConnsRadius
       for (int destVertex = 0; destVertex < numVertices; destVertex++) {
          if (srcVertex != destVertex) {
-            BGFLOAT dist = (*layout->dist_)(srcVertex, destVertex);
+            BGFLOAT dist = (*layout.dist_)(srcVertex, destVertex);
             if (dist <= threshConnsRadius_) {
                DistDestVertex distDestVertex {dist, destVertex};
                distDestVertices[srcVertex].push_back(distDestVertex);
@@ -89,15 +87,15 @@ void ConnStatic::setupConnections(Layout *layout, AllVertices *vertices, AllEdge
       // pick the shortest connsPerVertex_ connections
       for (BGSIZE i = 0; i < distDestVertices[srcVertex].size() && (int)i < connsPerVertex_; i++) {
          int destVertex = distDestVertices[srcVertex][i].destVertex;
-         edgeType type = layout->edgType(srcVertex, destVertex);
-         BGFLOAT *sumPoint = &vertices->summationMap_[destVertex];
+         edgeType type = layout.edgType(srcVertex, destVertex);
+         BGFLOAT *sumPoint = &layout.getVertices()->summationMap_[destVertex];
 
          LOG4CPLUS_DEBUG(fileLogger_,
                          "Source: " << srcVertex << " Dest: " << destVertex
                                     << " Dist: " << distDestVertices[srcVertex][i].dist);
 
          BGSIZE iEdg;
-         edges->addEdge(iEdg, type, srcVertex, destVertex, sumPoint, simulator.getDeltaT());
+         edges_->addEdge(iEdg, type, srcVertex, destVertex, sumPoint, simulator.getDeltaT());
          added++;
 
 

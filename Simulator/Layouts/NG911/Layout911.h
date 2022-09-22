@@ -53,11 +53,11 @@ public:
    /// Only built for 10x10 grid
    /// See: https://docs.google.com/spreadsheets/d/1DqP8sjkfJ_pkxtETzuEdoVZbWOGu633EMQAeShe5k68/edit?usp=sharing
    /// @param  index    the index of the vertex
-   int zone(int index);
+   int zone(int index) const;
 
    /// Returns the type of synapse at the given coordinates
    /// @param    srcVertex  integer that points to a Neuron in the type map as a source.
    /// @param    destVertex integer that points to a Neuron in the type map as a destination.
    /// @return type of the synapse.
-   virtual edgeType edgType(const int srcVertex, const int destVertex) override;
+   virtual edgeType edgType(const int srcVertex, const int destVertex) const override;
 };

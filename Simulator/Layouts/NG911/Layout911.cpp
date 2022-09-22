@@ -74,7 +74,7 @@ void Layout911::generateVertexTypeMap(int numVertices)
    DEBUG(cout << "\nInitializing vertex type map" << endl;);
 
    // Populate vertexTypeMap_ with base layer of CALR
-   fill_n(vertexTypeMap_, numVertices, CALR);
+   fill_n(vertexTypeMap_.begin(), numVertices, CALR);
 
    // for (int i = 0; i < numVertices; i++) {
    //    vertexTypeMap_[i] = CALR;
@@ -114,7 +114,7 @@ void Layout911::initStarterMap(const int numVertices)
 // Get the zone of the vertex
 // Only built for 10x10 grid
 // See: https://docs.google.com/spreadsheets/d/1DqP8sjkfJ_pkxtETzuEdoVZbWOGu633EMQAeShe5k68/edit?usp=sharing
-int Layout911::zone(int index)
+int Layout911::zone(int index) const
 {
    return (index % 10 >= 5) + 2 * (index < 50);
 }
@@ -124,7 +124,7 @@ int Layout911::zone(int index)
 ///  @param    srcVertex  integer that points to a Neuron in the type map as a source.
 ///  @param    destVertex integer that points to a Neuron in the type map as a destination.
 ///  @return type of the synapse.
-edgeType Layout911::edgType(const int srcVertex, const int destVertex)
+edgeType Layout911::edgType(const int srcVertex, const int destVertex) const
 {
    if (vertexTypeMap_[srcVertex] == CALR && vertexTypeMap_[destVertex] == PSAP)
       return CP;

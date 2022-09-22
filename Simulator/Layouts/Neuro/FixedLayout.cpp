@@ -37,7 +37,7 @@ void FixedLayout::generateVertexTypeMap(int numVertices)
    LOG4CPLUS_DEBUG(fileLogger_, "\nInitializing vertex type map" << endl);
 
    // Populate vertexTypeMap_ with EXC
-   fill_n(vertexTypeMap_, numVertices, EXC);
+   fill_n(vertexTypeMap_.begin(), numVertices, EXC);
 
    // for (int i = 0; i < numVertices; i++) {
    //    vertexTypeMap_[i] = EXC;
@@ -114,7 +114,7 @@ void FixedLayout::loadParameters()
 ///  @param    srcVertex  integer that points to a Neuron in the type map as a source.
 ///  @param    destVertex integer that points to a Neuron in the type map as a destination.
 ///  @return type of the synapse.
-edgeType FixedLayout::edgType(const int srcVertex, const int destVertex)
+edgeType FixedLayout::edgType(const int srcVertex, const int destVertex) const
 {
    if (vertexTypeMap_[srcVertex] == INH && vertexTypeMap_[destVertex] == INH)
       return II;
