@@ -329,6 +329,7 @@ add_executable(tests
         Testing/Core/LayoutFactoryTests.cpp
         Testing/Core/RecorderFactoryTests.cpp
         Testing/Core/RNGFactoryTests.cpp
+        Testing/Core/EventBufferTests.cpp
         Testing/Utils/ParameterManagerTests.cpp)
 
 # Links the Googletest framework with the testing executable
