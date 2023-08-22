@@ -207,6 +207,5 @@ def main():
     G = nx.convert_node_labels_to_integers(G, first_label=0, ordering='default')
     nx.write_gexf(G, "graph_files/" + out_file_name + ".gexf")
     nx.write_graphml(G, "graph_files/" + out_file_name + ".graphml", named_key_ids=True)
-
 if __name__ == '__main__':
     main()
